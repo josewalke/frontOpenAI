@@ -1,0 +1,22 @@
+/**
+* @license
+*
+* Font Family: Hoover
+* Designed by: Gaetan Baehr
+* URL: https://www.fontshare.com/fonts/hoover
+* © 2025 Indian Type Foundry
+*
+* Hoover Medium 
+
+*
+*/
+@font-face {
+  font-family: 'Hoover-Medium';
+  src: url('../fonts/Hoover-Medium.woff2') format('woff2'),
+       url('../fonts/Hoover-Medium.woff') format('woff'),
+       url('../fonts/Hoover-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-display: swap;
+  font-style: normal;
+}
+
