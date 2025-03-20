@@ -1,6 +1,8 @@
 import { createGlobalStyle } from 'styled-components';
 
+// 📌 Estilos globales para la aplicación, incluyendo la fuente personalizada
 const GlobalStyles = createGlobalStyle`
+  /* 📌 Definición de la fuente personalizada */
   @font-face {
     font-family: 'MiFuente';
     src: url('/Font/WEB/fonts/Hoover-Medium.woff2') format('woff2'),
@@ -9,7 +11,8 @@ const GlobalStyles = createGlobalStyle`
     font-style: normal;
   }
 
-   body {
+  /* 📌 Aplicación de la fuente personalizada a todo el cuerpo del documento */
+  body {
     font-family: 'MiFuente', sans-serif;
   }
 `;
