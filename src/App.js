@@ -1,8 +1,28 @@
 import { useState, useEffect, useRef } from "react";
-import styled from "styled-components";
-import { AnimatedList, AnimatedListItem } from "./AnimatedList";
+import styled, { createGlobalStyle } from "styled-components";
 import { Globe } from "./Globe";
-import GlobalStyles from "./GlobalStyles";
+
+const GlobalStyles = createGlobalStyle`
+  @font-face {
+    font-family: 'MiFuente';
+    src: url('/Font/WEB/fonts/Hoover-Medium.woff2') format('woff2'),
+         url('/Font/WEB/fonts/Hoover-Medium.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'MiFuente', sans-serif;
+    overflow: hidden;
+  }
+
+  #root {
+    height: 100%;
+  }
+`;
 
 const GlobeBackground = styled.div`
   position: fixed;
@@ -42,16 +62,13 @@ const ChatContainer = styled.div`
   box-shadow: 0px 4px 15px rgba(247, 128, 10, 0.54);
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  /* ❌ Quita esta línea para evitar que todo se alinee abajo */
+  justify-content: normal;
   position: relative;
-  padding: 10px;
   scroll-behavior: smooth;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
-  scrollbar-width: none;
 `;
+
+
 
 const MessageContainer = styled.div`
   display: flex;
@@ -82,16 +99,19 @@ const InputContainer = styled.div`
 
 const TextArea = styled.textarea`
   flex: 1;
-  height: 50px;
-  padding: 12px;
+  height: 70px;
+  padding: 14px 18px;
   border: 2px solid #ccc;
-  border-radius: 8px;
+  border-radius: 10px;
   font-family: 'MiFuente', sans-serif;
-  font-size: 16px;
+  font-size: 18px;
   resize: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+
   &:focus {
-    border-color: #007bff;
+    border-color: rgba(247, 128, 10, 0.74);
     outline: none;
+    box-shadow: 0 0 4px rgba(247, 128, 10, 0.6);
   }
 `;
 
@@ -125,51 +145,46 @@ function App() {
 
   const sendMessage = async () => {
     if (!message.trim()) return;
-  
+
     setMessages((prev) => [...prev, { text: message, isUser: true }]);
     setMessage("");
     setLoading(true);
-  
+
     try {
       const response = await fetch("http://localhost:5000/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message }),
       });
-  
+
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let aiResponse = "";
-  
-      // Añadimos mensaje vacío del asistente
+
       setMessages((prev) => [...prev, { text: "", isUser: false }]);
-  
+
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-  
+
         const chunk = decoder.decode(value, { stream: true });
         const lines = chunk.split("\n");
-  
+
         for (const line of lines) {
           if (!line.startsWith("data:")) continue;
-  
-          let text = line.slice(5); // quita "data:"
+
+          let text = line.slice(5);
           const cleanText = text.trim().replace(/^"+|"+$/g, "");
-  
+
           if (!cleanText || cleanText === "[DONE]") continue;
-  
-          console.log("🧩 Fragmento limpio:", JSON.stringify(cleanText));
-  
-          // Insertar espacio si es necesario (el backend ya no lo incluye)
+
           const needsSpace =
             aiResponse &&
             !aiResponse.endsWith(" ") &&
             !cleanText.startsWith(" ");
-  
+
           aiResponse += needsSpace ? " " + cleanText : cleanText;
-  
-          // Actualizar la vista progresivamente
+
           setMessages((prev) => {
             const updated = [...prev];
             updated[updated.length - 1] = { text: aiResponse, isUser: false };
@@ -184,11 +199,9 @@ function App() {
         { text: "⚠️ Error al conectar con el servidor", isUser: false },
       ]);
     }
-  
+
     setLoading(false);
   };
-  
-  
 
   return (
     <>
@@ -198,12 +211,11 @@ function App() {
       </GlobeBackground>
       <Container>
         <ChatContainer ref={chatContainerRef}>
-        {messages.map((msg, index) => (
-  <MessageContainer key={`${index}-${msg.text}`} isUser={msg.isUser}>
-    <MessageBubble isUser={msg.isUser}>{msg.text}</MessageBubble>
-  </MessageContainer>
-))}
-
+          {messages.map((msg, index) => (
+            <MessageContainer key={`${index}-${msg.text}`} isUser={msg.isUser}>
+              <MessageBubble isUser={msg.isUser}>{msg.text}</MessageBubble>
+            </MessageContainer>
+          ))}
         </ChatContainer>
         <InputContainer>
           <TextArea

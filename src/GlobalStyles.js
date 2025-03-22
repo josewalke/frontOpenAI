@@ -12,8 +12,17 @@ const GlobalStyles = createGlobalStyle`
   }
 
   /* 📌 Aplicación de la fuente personalizada a todo el cuerpo del documento */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
   body {
     font-family: 'MiFuente', sans-serif;
+    html, body {
+    height: 100vh;
+    overflow: hidden; /* 🔒 Bloquea scroll en página */
+    font-family: 'Arial', sans-serif;
   }
 `;
 
