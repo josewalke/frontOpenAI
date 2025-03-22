@@ -130,12 +130,6 @@ function App() {
     setMessage("");
     setLoading(true);
   
-    let newMessageIndex;
-    setMessages((prev) => {
-      newMessageIndex = prev.length;
-      return [...prev, { text: "", isUser: false }];
-    });
-  
     try {
       const response = await fetch("http://localhost:5000/chat", {
         method: "POST",
@@ -147,6 +141,9 @@ function App() {
       const decoder = new TextDecoder();
       let aiResponse = "";
   
+      // Añadimos mensaje vacío del asistente
+      setMessages((prev) => [...prev, { text: "", isUser: false }]);
+  
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
@@ -155,37 +152,27 @@ function App() {
         const lines = chunk.split("\n");
   
         for (const line of lines) {
-          // ✅ Eliminar solo el prefijo "data:" (no espacios)
-          const text = line.startsWith("data:") ? line.slice(5) : line;
-          if (!text || text === "[DONE]") continue;
+          if (!line.startsWith("data:")) continue;
   
-          console.log("🧩 Fragmento recibido:", JSON.stringify(text));
+          let text = line.slice(5); // quita "data:"
+          const cleanText = text.trim().replace(/^"+|"+$/g, "");
   
-          const lastChar = aiResponse.slice(-1);
-          const firstChar = text.charAt(0);
+          if (!cleanText || cleanText === "[DONE]") continue;
   
-          const isLetterOrDigit = (c) => /[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ]/.test(c);
-          const isSpace = (c) => /\s/.test(c);
+          console.log("🧩 Fragmento limpio:", JSON.stringify(cleanText));
   
-          const isJoiningWord =
-            isLetterOrDigit(lastChar) &&
-            isLetterOrDigit(firstChar) &&
-            !isSpace(lastChar) &&
-            !isSpace(firstChar);
+          // Insertar espacio si es necesario (el backend ya no lo incluye)
+          const needsSpace =
+            aiResponse &&
+            !aiResponse.endsWith(" ") &&
+            !cleanText.startsWith(" ");
   
-          if (isJoiningWord) {
-            // unir directamente sin espacio
-            aiResponse += text;
-          } else {
-            // insertar texto, asegurando que haya un espacio si es necesario
-            const needsSpace = aiResponse && !isSpace(lastChar) && !isSpace(firstChar);
-            aiResponse += (needsSpace ? " " : "") + text;
-          }
+          aiResponse += needsSpace ? " " + cleanText : cleanText;
   
-          // Mostrar el texto acumulado en pantalla
+          // Actualizar la vista progresivamente
           setMessages((prev) => {
             const updated = [...prev];
-            updated[newMessageIndex] = { text: aiResponse, isUser: false };
+            updated[updated.length - 1] = { text: aiResponse, isUser: false };
             return updated;
           });
         }
@@ -202,9 +189,7 @@ function App() {
   };
   
   
-  
-  
-  
+
   return (
     <>
       <GlobalStyles />
@@ -213,17 +198,22 @@ function App() {
       </GlobeBackground>
       <Container>
         <ChatContainer ref={chatContainerRef}>
-          <AnimatedList messages={messages.map((msg, index) => (
-            <AnimatedListItem key={`${index}-${msg.text}`}>
-              <MessageContainer isUser={msg.isUser}>
-                <MessageBubble isUser={msg.isUser}>{msg.text}</MessageBubble>
-              </MessageContainer>
-            </AnimatedListItem>
-          ))} />
+        {messages.map((msg, index) => (
+  <MessageContainer key={`${index}-${msg.text}`} isUser={msg.isUser}>
+    <MessageBubble isUser={msg.isUser}>{msg.text}</MessageBubble>
+  </MessageContainer>
+))}
+
         </ChatContainer>
         <InputContainer>
-          <TextArea placeholder="Escribe un mensaje..." value={message} onChange={(e) => setMessage(e.target.value)} />
-          <Button onClick={sendMessage} disabled={loading}>{loading ? "Enviando..." : "Enviar"}</Button>
+          <TextArea
+            placeholder="Escribe un mensaje..."
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+          />
+          <Button onClick={sendMessage} disabled={loading}>
+            {loading ? "Enviando..." : "Enviar"}
+          </Button>
         </InputContainer>
       </Container>
     </>
