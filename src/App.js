@@ -1,7 +1,9 @@
+// Importación de hooks de React y styled-components para estilos en línea
 import { useState, useEffect, useRef } from "react";
 import styled, { createGlobalStyle } from "styled-components";
-import { Globe } from "./Globe";
+import { Globe } from "./Globe"; // Componente decorativo del fondo
 
+// 🎨 Estilos globales aplicados a toda la aplicación
 const GlobalStyles = createGlobalStyle`
   @font-face {
     font-family: 'MiFuente';
@@ -16,7 +18,7 @@ const GlobalStyles = createGlobalStyle`
     padding: 0;
     height: 100%;
     font-family: 'MiFuente', sans-serif;
-    overflow: hidden;
+    overflow: hidden; /* Esto evita el scroll en toda la página */
   }
 
   #root {
@@ -24,6 +26,7 @@ const GlobalStyles = createGlobalStyle`
   }
 `;
 
+// 🌍 Componente visual del globo de fondo
 const GlobeBackground = styled.div`
   position: fixed;
   top: 0;
@@ -37,6 +40,7 @@ const GlobeBackground = styled.div`
   pointer-events: none;
 `;
 
+// Contenedor principal que centra el contenido en pantalla
 const Container = styled.div`
   display: flex;
   flex-direction: column;
@@ -50,11 +54,12 @@ const Container = styled.div`
   z-index: 1;
 `;
 
+// Contenedor del chat donde se muestran los mensajes
 const ChatContainer = styled.div`
   width: 90%;
   max-width: 1050px;
   height: 600px;
-  overflow-y: auto;
+  overflow-y: auto; /* scroll vertical */
   background-color: rgba(255, 255, 255, 0);
   backdrop-filter: blur(4px);
   border-radius: 20px;
@@ -62,20 +67,19 @@ const ChatContainer = styled.div`
   box-shadow: 0px 4px 15px rgba(247, 128, 10, 0.54);
   display: flex;
   flex-direction: column;
-  /* ❌ Quita esta línea para evitar que todo se alinee abajo */
-  justify-content: normal;
+  justify-content: normal; /* ya no se fuerza a estar abajo */
   position: relative;
   scroll-behavior: smooth;
 `;
 
-
-
+// Contenedor individual por mensaje (alineado izq/dcha según el usuario)
 const MessageContainer = styled.div`
   display: flex;
   justify-content: ${(props) => (props.isUser ? "flex-end" : "flex-start")};
   width: 100%;
 `;
 
+// Burbuja visual del mensaje (con padding, borde, etc.)
 const MessageBubble = styled.div`
   display: inline-block;
   font-family: 'MiFuente', sans-serif;
@@ -89,6 +93,7 @@ const MessageBubble = styled.div`
   text-align: ${(props) => (props.isUser ? "right" : "left")};
 `;
 
+// Contenedor del input + botón
 const InputContainer = styled.div`
   display: flex;
   width: 90%;
@@ -97,6 +102,7 @@ const InputContainer = styled.div`
   font-family: 'MiFuente', sans-serif;
 `;
 
+// Estilos del área de texto para escribir mensajes
 const TextArea = styled.textarea`
   flex: 1;
   height: 70px;
@@ -115,6 +121,7 @@ const TextArea = styled.textarea`
   }
 `;
 
+// Botón para enviar mensajes
 const Button = styled.button`
   background-color: ${(props) => (props.disabled ? "#aaa" : "rgba(247, 128, 10, 0.74)")};
   color: white;
@@ -131,21 +138,25 @@ const Button = styled.button`
   }
 `;
 
+// 🧠 Componente principal
 function App() {
-  const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const chatContainerRef = useRef(null);
+  const [message, setMessage] = useState(""); // mensaje actual
+  const [messages, setMessages] = useState([]); // historial de mensajes
+  const [loading, setLoading] = useState(false); // para deshabilitar botón mientras carga
+  const chatContainerRef = useRef(null); // referencia para auto-scroll
 
+  // Desplaza al fondo cuando hay nuevos mensajes
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [messages]);
 
+  // 📤 Envía el mensaje al backend y recibe la respuesta en streaming
   const sendMessage = async () => {
     if (!message.trim()) return;
 
+    // Añadir mensaje del usuario
     setMessages((prev) => [...prev, { text: message, isUser: true }]);
     setMessage("");
     setLoading(true);
@@ -161,8 +172,10 @@ function App() {
       const decoder = new TextDecoder();
       let aiResponse = "";
 
+      // Añade mensaje vacío del bot (para actualizarlo progresivamente)
       setMessages((prev) => [...prev, { text: "", isUser: false }]);
 
+      // Procesamiento por chunks (streaming)
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
@@ -178,6 +191,7 @@ function App() {
 
           if (!cleanText || cleanText === "[DONE]") continue;
 
+          // Junta el texto con espacio si no empieza/termina con uno
           const needsSpace =
             aiResponse &&
             !aiResponse.endsWith(" ") &&
@@ -185,6 +199,7 @@ function App() {
 
           aiResponse += needsSpace ? " " + cleanText : cleanText;
 
+          // Actualiza el mensaje del bot progresivamente
           setMessages((prev) => {
             const updated = [...prev];
             updated[updated.length - 1] = { text: aiResponse, isUser: false };
@@ -203,6 +218,7 @@ function App() {
     setLoading(false);
   };
 
+  // 📦 Renderizado principal
   return (
     <>
       <GlobalStyles />
